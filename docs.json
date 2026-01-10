@@ -1,0 +1,145 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "maple",
+  "name": "Pkg.lat Docs",
+  "colors": {
+    "primary": "#ff0000",
+    "light": "#ff0000",
+    "dark": "#ff3131"
+  },
+  "favicon": "/images/AdobeExpress-file.png",
+  "navigation": {
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Panel",
+          "icon": "house",
+          "href": "https://torch.pkg.lat"
+        },
+        {
+          "anchor": "Metrics",
+          "icon": "computer-mouse",
+          "href": "https://metric.pkg.lat"
+        }
+      ]
+    },
+    "tabs": [
+      {
+        "tab": "Home",
+        "icon": "warehouse",
+        "groups": [
+          {
+            "group": "Getting started",
+            "pages": [
+              "index",
+              "quickstart",
+              "development"
+            ]
+          },
+          {
+            "group": "Customization",
+            "pages": [
+              "essentials/settings",
+              "essentials/navigation"
+            ]
+          },
+          {
+            "group": "Writing content",
+            "pages": [
+              "essentials/markdown",
+              "essentials/code",
+              "essentials/images",
+              "essentials/reusable-snippets"
+            ]
+          },
+          {
+            "group": "AI tools",
+            "pages": [
+              "ai-tools/cursor",
+              "ai-tools/claude-code",
+              "ai-tools/windsurf"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "groups": [
+          {
+            "group": "API documentation",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Endpoint examples",
+            "pages": [
+              "api-reference/endpoint/get",
+              "api-reference/endpoint/create",
+              "api-reference/endpoint/delete",
+              "api-reference/endpoint/webhook"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Support",
+        "href": "mailto:hello@pkg.lat"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://dashboard.mintlify.com"
+    }
+  },
+  "contextual": {
+    "options": [
+     "copy",
+     "view",
+     "chatgpt",
+     "claude",
+     "perplexity",
+     "mcp",
+     "cursor",
+     "vscode"
+   ]
+  },
+  "footer": {
+    "socials": {
+      "x": "https://x.com/mintlify",
+      "github": "https://github.com/mintlify",
+      "linkedin": "https://linkedin.com/company/mintlify"
+    }
+  },
+  "description": "Discover our products and find clear guides for installing and using our open-source software.",
+  "background": {
+    "decoration": "windows"
+  },
+  "appearance": {
+    "strict": false,
+    "default": "system"
+  },
+  "fonts": {
+    "family": "Space Mono",
+    "format": "woff",
+    "heading": {
+      "source": "https://fonts.cdnfonts.com/css/seven-segment",
+      "family": "Seven Segment",
+      "weight": 300,
+      "format": "woff"
+    },
+    "source": "https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+    "body": {
+      "source": "https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+      "weight": 400,
+      "family": "Space Mono",
+      "format": "woff"
+    },
+    "weight": 400
+  }
+}
