@@ -2,12 +2,35 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "maple",
   "name": "Pkg.lat Docs",
+
+  "head": [
+    {
+      "tag": "link",
+      "attrs": {
+        "rel": "stylesheet",
+        "href": "https://fonts.cdnfonts.com/css/seven-segment"
+      }
+    }
+  ],
+
   "colors": {
     "primary": "#ff0000",
     "light": "#ff0000",
     "dark": "#ff3131"
   },
+
   "favicon": "/images/AdobeExpress-file.png",
+
+  "fonts": {
+    "family": "Space Mono",
+    "weight": 400,
+    "source": "https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap",
+    "heading": {
+      "family": "Seven Segment",
+      "weight": 300
+    }
+  },
+
   "navigation": {
     "global": {
       "anchors": [
@@ -30,18 +53,11 @@
         "groups": [
           {
             "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
+            "pages": ["index", "quickstart", "development"]
           },
           {
             "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
+            "pages": ["essentials/settings", "essentials/navigation"]
           },
           {
             "group": "Writing content",
@@ -67,9 +83,7 @@
         "groups": [
           {
             "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
+            "pages": ["api-reference/introduction"]
           },
           {
             "group": "Endpoint examples",
@@ -84,6 +98,7 @@
       }
     ]
   },
+
   "navbar": {
     "links": [
       {
@@ -97,18 +112,20 @@
       "href": "https://dashboard.mintlify.com"
     }
   },
+
   "contextual": {
     "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      "mcp",
+      "cursor",
+      "vscode"
+    ]
   },
+
   "footer": {
     "socials": {
       "x": "https://x.com/mintlify",
@@ -116,30 +133,15 @@
       "linkedin": "https://linkedin.com/company/mintlify"
     }
   },
+
   "description": "Discover our products and find clear guides for installing and using our open-source software.",
+
   "background": {
     "decoration": "windows"
   },
+
   "appearance": {
     "strict": false,
     "default": "system"
-  },
-  "fonts": {
-    "family": "Space Mono",
-    "format": "woff",
-    "heading": {
-      "source": "https://fonts.cdnfonts.com/css/seven-segment",
-      "family": "Seven Segment",
-      "weight": 300,
-      "format": "woff"
-    },
-    "source": "https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap",
-    "body": {
-      "source": "https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap",
-      "weight": 400,
-      "family": "Space Mono",
-      "format": "woff"
-    },
-    "weight": 400
   }
 }
