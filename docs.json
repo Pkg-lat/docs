@@ -31,16 +31,17 @@
           {
             "group": "Getting started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "index"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Local Development",
+            "icon": "rectangle-terminal",
             "pages": [
+              "development",
               "essentials/settings",
-              "essentials/navigation"
+              "essentials/navigation",
+              "quickstart"
             ]
           },
           {

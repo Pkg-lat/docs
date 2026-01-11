@@ -1,43 +1,74 @@
 ---
-title: 'Development'
-description: 'Preview changes locally to update your docs'
+title: "Lightd Local development."
+description: "Lightd is mainly written in rust, thus we encourage you download rust, and other needed tools for it. "
 ---
 
 <Info>
-  **Prerequisites**:
-  - Node.js version 19 or higher
-  - A docs repository with a `docs.json` file
+  **Prerequisites for system**:
+
+  - Minimum 2Ghz or high cpu+
+  - Minimum 5GB of disk
+  - Minimum 2GB of Random Access Memory (RAM)
 </Info>
 
-Follow these steps to install and run Mintlify on your operating system.
+Follow these steps to install and run Lightd on your system.
 
 <Steps>
-<Step title="Install the Mintlify CLI">
+  <Step title="Install The Rust Programming Language" icon="rust">
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+  </Step>
+  <Step title="Run cargo install to check if Rust is available on the machine">
+    Navigate to your docs directory where lightd was cloned and run.
 
-```bash
-npm i -g mint
-```
-</Step>
+    ```bash
+    cargo install --all
+    ```
+  </Step>
+  <Step title="Use the make file or cargo to run the project.">
+    ```bash
+    cargo run 
+    ```
 
-<Step title="Preview locally">
+    You should see an output like this
 
-Navigate to your docs directory where your `docs.json` file is located, and run the following command:
-
-```bash
-mint dev
-```
-
-A local preview of your documentation will be available at `http://localhost:3000`.
-
-</Step>
+    ```rust
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.35s
+    Running `target/debug/lightd`
+    2026-01-11T04:44:50.150690Z  INFO lightd::network_config: Loaded network configuration from network.json
+          
+        __    _       __    __      __
+       / /   (_)___ _/ /_  / /_____/ /
+      / /   / / __ `/ __ \/ __/ __  / 
+     / /___/ / /_/ / / / / /_/ /_/ /  
+    /_____/_/\__, /_/ /_/\__/\__,_/   
+            /____/                           
+                                                              
+    Lightd Daemon v0.1.0
+    (c) 2025-present Nadhi.dev
+    
+    2026-01-11T04:44:50.150984Z  INFO lightd: Tokio runtime configured with 24 worker threads
+    2026-01-11T04:44:51.841387Z  INFO lightd::docker::client: Successfully connected to Docker daemon
+    2026-01-11T04:44:51.873090Z  INFO lightd::container_tracker: Container tracking storage initialized at: ./storage/containers
+    2026-01-11T04:44:51.913496Z  INFO lightd::docker::network: Restored 16 port allocations from container data
+    2026-01-11T04:44:51.922166Z  INFO lightd::state_manager: Loaded existing daemon state from: ./storage/states.json
+    2026-01-11T04:44:51.922554Z  INFO lightd: Starting daemon recovery process...
+    2026-01-11T04:44:51.945959Z  INFO lightd::state_manager: Updated container 26a20ca1-fbc1-42e3-ba5a-1b65e42b10a4 state to: stopped
+    2026-01-11T04:44:51.945983Z  INFO lightd::state_manager: Updated container b6b5c912-5b6b-4c3e-9a00-c45db7ce1655 state to: stopped
+    2026-01-11T04:44:51.945989Z  INFO lightd::state_manager: Updated container 73b9c7aa-b235-44d1-bad8-2f84e929b311 state to: stopped
+    ```
+  </Step>
 </Steps>
 
-## Custom ports
+## Building with MakeFiles
 
-By default, Mintlify uses port 3000. You can customize the port Mintlify runs on by using the `--port` flag. For example, to run Mintlify on port 3333, use this command:
+Lightd comes with a MakeFile in default. This allows developers and power users to test lightd faster. Make sure your system supports MakeFiles before we start.
+
+### Running lightd with the MakeFile
 
 ```bash
-mint dev --port 3333
+make run
 ```
 
 If you attempt to run Mintlify on a port that's already in use, it will use the next available port:
@@ -67,7 +98,11 @@ mint broken-links
 If the deployment is successful, you should see the following:
 
 <Frame>
-  <img src="/images/checks-passed.png" alt="Screenshot of a deployment confirmation message that says All checks have passed." style={{ borderRadius: '0.5rem' }} />
+  <img
+    src="/images/checks-passed.png"
+    alt="Screenshot of a deployment confirmation message that says All checks have passed."
+    style={{ borderRadius:"0.5rem" }}
+  />
 </Frame>
 
 ## Code formatting
@@ -78,15 +113,13 @@ We suggest using extensions on your IDE to recognize and format MDX. If you're a
 
 <AccordionGroup>
   <Accordion title='Error: Could not load the "sharp" module using the darwin-arm64 runtime'>
-
     This may be due to an outdated version of node. Try the following:
+
     1. Remove the currently-installed version of the CLI: `npm remove -g mint`
     2. Upgrade to Node v19 or higher.
     3. Reinstall the CLI: `npm i -g mint`
   </Accordion>
-
   <Accordion title="Issue: Encountering an unknown error">
-  
     Solution: Go to the root of your device and delete the `~/.mintlify` folder. Then run `mint dev` again.
   </Accordion>
 </AccordionGroup>
