@@ -1,33 +1,14 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "Torch API documentation"
+description: "Torch is a panel Pkg.lat made for lightd. It is powered by rust and using Axum to handle endpoints."
 ---
 
 <Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
+  The Torch API requires authentication, we have not currently implemented a way to use the client api without using your own session token.
 </Note>
 
-## Welcome
+## Tenant System
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+A tenant is basically a subuser, this tenat can use your resources and control your servers but they cannot **Reset passwords**, **Add biometrics** and handle anything related to auth. There are two types of tenants, the main user tenant and subusers who aren't owners.
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
-
-## Authentication
-
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
-
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
-```
+> Coming soon..
