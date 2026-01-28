@@ -1,0 +1,450 @@
+---
+title: "Volume Disk Quotas"
+description: "OS-level disk quotas for volumes to prevent containers from consuming unlimited disk space with real-time monitoring and resizing."
+---
+
+## Overview
+
+Lightd supports OS-level disk quotas for volumes to prevent containers from consuming unlimited disk space. Quotas are enforced at the filesystem level using platform-specific mechanisms.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="OS-Level Enforcement" icon="shield">
+    Uses native OS mechanisms (disk images on macOS, loop devices on Linux)
+  </Card>
+  <Card title="Default 1GB Quota" icon="hard-drive">
+    Volumes default to 1GB if no size specified
+  </Card>
+  <Card title="Customizable Size" icon="sliders">
+    Specify size in MB during creation
+  </Card>
+  <Card title="Real-time Monitoring" icon="chart-line">
+    Check quota usage at any time
+  </Card>
+  <Card title="Resizable" icon="arrows-up-down">
+    Expand or shrink volume quotas
+  </Card>
+  <Card title="WebSocket Alerts" icon="bell">
+    Get notified when volume is out of space
+  </Card>
+</CardGroup>
+
+## Platform Support
+
+<Tabs>
+  <Tab title="macOS">
+    - Uses sparse disk images (`.sparseimage`)
+    - Mounted via `hdiutil`
+    - Supports dynamic resizing
+    - Efficient space usage (sparse allocation)
+  </Tab>
+  
+  <Tab title="Linux">
+    - Uses loop devices with ext4 filesystem
+    - Mounted via `mount -o loop`
+    - Supports resizing with `resize2fs`
+    - Efficient sparse file allocation
+  </Tab>
+  
+  <Tab title="Other Platforms">
+    - Falls back to directory-based tracking
+    - No hard enforcement, but usage monitoring available
+  </Tab>
+</Tabs>
+
+## Create Volume with Quota
+
+Create a new volume with specified disk quota.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{"size": 2048}'
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/volumes', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    size: 2048
+  })
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'http://localhost:8070/volumes',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={'size': 2048}
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "size": 2048
+}
+```
+
+**Fields:**
+- `size` (optional) - Disk quota in MB (default: 1024 = 1GB)
+
+**Examples:**
+- `{"size": 1024}` = 1GB
+- `{"size": 2048}` = 2GB
+- `{"size": 10240}` = 10GB
+- `{}` or no body = 1GB default
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "path": "/path/to/volume",
+  "created_at": 1706400000,
+  "quota_mb": 2048
+}
+```
+
+## Get Quota Usage
+
+Check current disk usage for a volume.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/volumes/550e8400/quota \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/volumes/550e8400/quota', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+console.log(`Used: ${data.used_mb}MB / ${data.size_mb}MB (${data.percentage_used}%)`);
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/volumes/550e8400/quota',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+print(f"Used: {data['used_mb']}MB / {data['size_mb']}MB ({data['percentage_used']}%)")
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "size_mb": 2048,
+  "used_mb": 512,
+  "available_mb": 1536,
+  "percentage_used": 25.0
+}
+```
+
+**Fields:**
+- `size_mb` - Total quota size in MB
+- `used_mb` - Currently used space in MB
+- `available_mb` - Available space in MB
+- `percentage_used` - Percentage of quota used (0-100)
+
+## Resize Volume
+
+Change the disk quota for an existing volume.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/550e8400/resize \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{"size": 4096}'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/volumes/550e8400/resize', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    size: 4096
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/volumes/550e8400/resize',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={'size': 4096}
+)
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "size": 4096
+}
+```
+
+**Fields:**
+- `size` (required) - New quota size in MB
+
+<Warning>
+- Can increase or decrease size
+- Decreasing below current usage may fail
+- Volume is temporarily unmounted during resize
+</Warning>
+
+## WebSocket Notifications
+
+When a container's volume runs out of space, Lightd sends a WebSocket event:
+
+```json
+{
+  "event": "daemon_message",
+  "data": "System out of storage"
+}
+```
+
+This allows applications to handle disk full scenarios gracefully.
+
+## Quota Monitoring
+
+Lightd automatically monitors volume quotas and considers a volume "out of space" when:
+- Less than 10MB available, OR
+- More than 95% of quota used
+
+<Info>
+Applications should monitor quota usage and handle low disk space appropriately.
+</Info>
+
+## Size Reference
+
+Common size conversions:
+
+| Size | MB Value | JSON Example |
+|------|----------|--------------|
+| 512MB | 512 | `{"size": 512}` |
+| 1GB | 1024 | `{"size": 1024}` |
+| 2GB | 2048 | `{"size": 2048}` |
+| 5GB | 5120 | `{"size": 5120}` |
+| 10GB | 10240 | `{"size": 10240}` |
+| 20GB | 20480 | `{"size": 20480}` |
+| 50GB | 51200 | `{"size": 51200}` |
+| 100GB | 102400 | `{"size": 102400}` |
+
+**Formula:** `MB = GB × 1024`
+
+## Complete Example
+
+Here's a complete workflow for managing volume quotas:
+
+```javascript
+// Create 10GB volume
+const createResponse = await fetch('http://localhost:8070/volumes', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ size: 10240 })
+});
+
+const { id } = await createResponse.json();
+console.log('Volume created:', id);
+
+// Monitor quota usage
+const checkQuota = async () => {
+  const response = await fetch(`http://localhost:8070/volumes/${id}/quota`, {
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json'
+    }
+  });
+  
+  const quota = await response.json();
+  console.log(`Usage: ${quota.used_mb}MB / ${quota.size_mb}MB (${quota.percentage_used}%)`);
+  
+  // Alert if over 80% used
+  if (quota.percentage_used > 80) {
+    console.warn('Volume is running low on space!');
+    
+    // Resize to 20GB
+    await fetch(`http://localhost:8070/volumes/${id}/resize`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ size: 20480 })
+    });
+    
+    console.log('Volume resized to 20GB');
+  }
+};
+
+// Check quota every 5 minutes
+setInterval(checkQuota, 5 * 60 * 1000);
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Set Appropriate Quotas">
+    Estimate application needs and add buffer space. Better to start larger than to resize frequently.
+  </Accordion>
+  
+  <Accordion title="Monitor Usage">
+    Regularly check quota usage via API. Set up alerts when usage exceeds 80%.
+  </Accordion>
+  
+  <Accordion title="Handle Disk Full">
+    Implement error handling for disk full scenarios. Listen to WebSocket events for storage alerts.
+  </Accordion>
+  
+  <Accordion title="Plan for Growth">
+    Resize volumes before hitting limits. Don't wait until 95% full.
+  </Accordion>
+  
+  <Accordion title="Use WebSocket Events">
+    Subscribe to storage alerts to get real-time notifications when volumes are running low.
+  </Accordion>
+</AccordionGroup>
+
+## Technical Implementation
+
+<Tabs>
+  <Tab title="macOS">
+    ```bash
+    # Create sparse disk image
+    hdiutil create -size 2048m -fs HFS+ -volname volume-id \
+      -type SPARSE /path/to/volume.dmg
+
+    # Mount disk image
+    hdiutil attach /path/to/volume.dmg.sparseimage \
+      -mountpoint /path/to/mount -nobrowse
+
+    # Resize disk image
+    hdiutil resize -size 4096m /path/to/volume.dmg.sparseimage
+
+    # Unmount
+    hdiutil detach /path/to/mount -force
+    ```
+  </Tab>
+  
+  <Tab title="Linux">
+    ```bash
+    # Create sparse file
+    dd if=/dev/zero of=/path/to/volume.img bs=1M count=0 seek=2048
+
+    # Create filesystem
+    mkfs.ext4 -F /path/to/volume.img
+
+    # Mount loop device
+    mount -o loop /path/to/volume.img /path/to/mount
+
+    # Resize
+    dd if=/dev/zero of=/path/to/volume.img bs=1M count=0 seek=4096
+    resize2fs /path/to/volume.img
+
+    # Unmount
+    umount /path/to/mount
+    ```
+  </Tab>
+</Tabs>
+
+## Limitations
+
+- **macOS**: Requires `hdiutil` (included in macOS)
+- **Linux**: Requires `mount`, `mkfs.ext4`, `resize2fs` (usually pre-installed)
+- **Permissions**: May require elevated permissions for mount operations
+- **Performance**: Slight overhead compared to direct filesystem access
+- **Resize Downtime**: Volume temporarily unavailable during resize
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="Failed to create disk image">
+    **Causes:**
+    - Insufficient disk space on host
+    - Permission issues
+    - Missing system tools
+    
+    **Solutions:**
+    - Check available disk space
+    - Verify permissions
+    - Ensure `hdiutil` (macOS) or `mount` (Linux) is available
+  </Accordion>
+  
+  <Accordion title="Failed to mount">
+    **Causes:**
+    - Mount point already in use
+    - Disk image/file doesn't exist
+    - System mount limits reached
+    
+    **Solutions:**
+    - Check if mount point is in use
+    - Verify disk image/file exists
+    - Check system mount limits
+  </Accordion>
+  
+  <Accordion title="Resize failed">
+    **Causes:**
+    - Cannot shrink below current usage
+    - Invalid new size
+    - Insufficient host disk space
+    
+    **Solutions:**
+    - Ensure new size is larger than current usage
+    - Verify new size is valid
+    - Check available host disk space
+  </Accordion>
+</AccordionGroup>
+
+## Security Considerations
+
+- **DoS Prevention**: Quotas prevent disk exhaustion attacks
+- **Isolation**: Each volume is isolated from others
+- **Host Protection**: Host filesystem protected from container abuse
+- **OS-Level Enforcement**: Quota enforcement at OS level (cannot be bypassed)

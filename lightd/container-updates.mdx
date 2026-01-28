@@ -1,0 +1,602 @@
+---
+title: "Container Configuration Updates"
+description: "Dynamically update container resource limits and volumes without recreating containers using Docker's update functionality."
+---
+
+## Overview
+
+Lightd supports dynamic container configuration updates, allowing you to modify resource limits and volumes without downtime or container recreation.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Live Resource Updates" icon="gauge-high">
+    Modify CPU and memory limits without downtime
+  </Card>
+  <Card title="Async Processing" icon="clock">
+    All updates handled asynchronously with event tracking
+  </Card>
+  <Card title="Validation" icon="shield-check">
+    Input validation before applying changes
+  </Card>
+  <Card title="Audit Logging" icon="file-lines">
+    All modifications logged for audit trails
+  </Card>
+  <Card title="Volume Management" icon="hard-drive">
+    Update volume mounts (requires restart)
+  </Card>
+  <Card title="No Downtime" icon="circle-check">
+    Resource updates applied without stopping containers
+  </Card>
+</CardGroup>
+
+## Resource Limits
+
+### Memory Limits
+
+| Field | Description | Constraints |
+|-------|-------------|-------------|
+| `memory` | Hard memory limit in bytes | 4MB - 1TB |
+| `memory_swap` | Memory + swap limit in bytes | >= memory or -1 for unlimited |
+| `memory_reservation` | Soft memory limit in bytes | <= memory |
+
+**Constraints:**
+- Minimum: 4MB (4194304 bytes)
+- Maximum: 1TB (1099511627776 bytes)
+- Swap must be >= memory or -1
+
+### CPU Limits
+
+| Field | Description | Constraints |
+|-------|-------------|-------------|
+| `cpu_shares` | Relative CPU weight | 2-262144 (default 1024) |
+| `cpu_period` | CPU CFS period in microseconds | 1000-1000000 |
+| `cpu_quota` | CPU CFS quota in microseconds | >= 1000 or -1 for unlimited |
+| `cpuset_cpus` | CPUs to use | e.g., "0-3" or "0,2" |
+
+### Block I/O Limits
+
+| Field | Description | Constraints |
+|-------|-------------|-------------|
+| `blkio_weight` | Block IO weight | 10-1000 (default 500) |
+
+## Update Resource Limits
+
+Modify container resource limits without restart.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-container/resources \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "memory": 536870912,
+    "memory_swap": 1073741824,
+    "memory_reservation": 268435456,
+    "cpu_shares": 512,
+    "cpu_period": 100000,
+    "cpu_quota": 50000,
+    "cpuset_cpus": "0-1",
+    "blkio_weight": 500
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-container/resources', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    memory: 536870912,
+    memory_swap: 1073741824,
+    memory_reservation: 268435456,
+    cpu_shares: 512,
+    cpu_period: 100000,
+    cpu_quota: 50000,
+    cpuset_cpus: '0-1',
+    blkio_weight: 500
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-container/resources',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'memory': 536870912,
+        'memory_swap': 1073741824,
+        'memory_reservation': 268435456,
+        'cpu_shares': 512,
+        'cpu_period': 100000,
+        'cpu_quota': 50000,
+        'cpuset_cpus': '0-1',
+        'blkio_weight': 500
+    }
+)
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "memory": 536870912,
+  "memory_swap": 1073741824,
+  "memory_reservation": 268435456,
+  "cpu_shares": 512,
+  "cpu_period": 100000,
+  "cpu_quota": 50000,
+  "cpuset_cpus": "0-1",
+  "blkio_weight": 500
+}
+```
+
+<Info>
+All fields are optional - only include fields you want to update.
+</Info>
+
+**Response (202 Accepted):**
+```json
+{
+  "message": "Resource update started"
+}
+```
+
+## Get Current Resources
+
+Get current resource limits for a container.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/containers/my-container/resources \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/containers/my-container/resources', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const resources = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/containers/my-container/resources',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+resources = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "memory": 536870912,
+  "memory_swap": 1073741824,
+  "memory_reservation": 268435456,
+  "cpu_shares": 512,
+  "cpu_period": 100000,
+  "cpu_quota": 50000,
+  "cpuset_cpus": "0-1",
+  "blkio_weight": 500
+}
+```
+
+## Update Volumes
+
+Update volume mounts (requires container restart to apply).
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-container/volumes \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "volumes": {
+      "/app/config": "/host/path/config",
+      "/app/logs": "/host/path/logs",
+      "/app/data": "/host/path/data"
+    }
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-container/volumes', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    volumes: {
+      '/app/config': '/host/path/config',
+      '/app/logs': '/host/path/logs',
+      '/app/data': '/host/path/data'
+    }
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-container/volumes',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'volumes': {
+            '/app/config': '/host/path/config',
+            '/app/logs': '/host/path/logs',
+            '/app/data': '/host/path/data'
+        }
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Volumes updated (restart container to apply changes)"
+}
+```
+
+<Warning>
+Volume changes require a container restart to take effect.
+</Warning>
+
+## Common Use Cases
+
+### Update Memory to 512MB
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-container/resources \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "memory": 536870912,
+    "memory_swap": 1073741824
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-container/resources', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    memory: 536870912,
+    memory_swap: 1073741824
+  })
+});
+```
+</CodeGroup>
+
+### Limit to 50% CPU
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-container/resources \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cpu_quota": 50000,
+    "cpu_period": 100000
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-container/resources', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    cpu_quota: 50000,
+    cpu_period: 100000
+  })
+});
+```
+</CodeGroup>
+
+### Set CPU Affinity
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-container/resources \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cpuset_cpus": "0,2"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-container/resources', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    cpuset_cpus: '0,2'
+  })
+});
+```
+</CodeGroup>
+
+### Update Block I/O Priority
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-container/resources \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "blkio_weight": 750
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-container/resources', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    blkio_weight: 750
+  })
+});
+```
+</CodeGroup>
+
+## Memory Size Reference
+
+Common memory sizes in bytes:
+
+| Size | Bytes | JSON Value |
+|------|-------|------------|
+| 64MB | 67108864 | `67108864` |
+| 128MB | 134217728 | `134217728` |
+| 256MB | 268435456 | `268435456` |
+| 512MB | 536870912 | `536870912` |
+| 1GB | 1073741824 | `1073741824` |
+| 2GB | 2147483648 | `2147483648` |
+| 4GB | 4294967296 | `4294967296` |
+| 8GB | 8589934592 | `8589934592` |
+
+**Formula:** `bytes = MB × 1024 × 1024`
+
+## CPU Quota Calculations
+
+CPU quota is specified in microseconds per period.
+
+**Examples:**
+- 50% of one CPU: `cpu_quota: 50000, cpu_period: 100000`
+- 100% of one CPU: `cpu_quota: 100000, cpu_period: 100000`
+- 200% (2 CPUs): `cpu_quota: 200000, cpu_period: 100000`
+- Unlimited: `cpu_quota: -1`
+
+**Formula:** `CPU % = (cpu_quota / cpu_period) × 100`
+
+## Update Lifecycle
+
+Container updates follow this lifecycle:
+
+<Steps>
+  <Step title="Request Received">
+    API receives update request and validates parameters
+  </Step>
+  
+  <Step title="Async Processing">
+    Update job spawned in background, returns 202 Accepted
+  </Step>
+  
+  <Step title="Docker Update">
+    Docker container updated with new resource limits
+  </Step>
+  
+  <Step title="Database Persistence">
+    Updated limits stored in container state database
+  </Step>
+  
+  <Step title="Events Emitted">
+    Events emitted for monitoring and audit logging
+  </Step>
+</Steps>
+
+## Update Types
+
+### Live Updates (No Restart Required)
+
+These updates are applied immediately without stopping the container:
+
+- Memory limits
+- CPU shares
+- CPU quota/period
+- CPU affinity
+- Block I/O weight
+
+### Requires Restart
+
+These updates require a container restart to take effect:
+
+- Volume mounts
+- Network configuration
+- Environment variables
+- Image changes
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Gradual Changes">
+    Make incremental resource adjustments rather than large jumps. Monitor impact after each change.
+  </Accordion>
+  
+  <Accordion title="Monitor Impact">
+    Check container performance after updates using stats API or WebSocket monitoring.
+  </Accordion>
+  
+  <Accordion title="Validate First">
+    Use GET endpoint to see current limits before updating to avoid conflicts.
+  </Accordion>
+  
+  <Accordion title="Document Changes">
+    Keep audit trail of resource modifications for troubleshooting and compliance.
+  </Accordion>
+  
+  <Accordion title="Test Limits">
+    Test resource limits in staging environment before applying to production.
+  </Accordion>
+  
+  <Accordion title="Plan Restarts">
+    Schedule volume updates during maintenance windows to minimize disruption.
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="Memory limit must be at least 4MB">
+    **Cause:** Memory value below minimum threshold
+    
+    **Solution:** Increase memory value to at least 4194304 bytes (4MB)
+  </Accordion>
+  
+  <Accordion title="CPU shares must be between 2 and 262144">
+    **Cause:** CPU shares value outside valid range
+    
+    **Solution:** Adjust cpu_shares to valid range (2-262144)
+  </Accordion>
+  
+  <Accordion title="Container not yet created">
+    **Cause:** Container still installing
+    
+    **Solution:** Wait for container installation to complete before updating
+  </Accordion>
+  
+  <Accordion title="Cannot mount to system path">
+    **Cause:** Attempting to mount to protected system paths
+    
+    **Solution:** Avoid mounting to protected paths like /bin, /etc, /sys
+  </Accordion>
+</AccordionGroup>
+
+## Complete Example
+
+Here's a complete workflow for updating container resources:
+
+```javascript
+// Get current resource limits
+const getCurrentResources = async (containerId) => {
+  const response = await fetch(`http://localhost:8070/containers/${containerId}/resources`, {
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json'
+    }
+  });
+  
+  return await response.json();
+};
+
+// Update memory to 1GB
+const updateMemory = async (containerId) => {
+  await fetch(`http://localhost:8070/containers/${containerId}/resources`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      memory: 1073741824,
+      memory_swap: 2147483648
+    })
+  });
+  
+  console.log('Memory updated to 1GB');
+};
+
+// Limit CPU to 50%
+const limitCPU = async (containerId) => {
+  await fetch(`http://localhost:8070/containers/${containerId}/resources`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      cpu_quota: 50000,
+      cpu_period: 100000
+    })
+  });
+  
+  console.log('CPU limited to 50%');
+};
+
+// Usage
+const containerId = 'my-container';
+
+// Check current resources
+const current = await getCurrentResources(containerId);
+console.log('Current resources:', current);
+
+// Update resources
+await updateMemory(containerId);
+await limitCPU(containerId);
+
+// Verify changes
+const updated = await getCurrentResources(containerId);
+console.log('Updated resources:', updated);
+```
+
+## Security Considerations
+
+- All updates require authentication
+- Resource limits validated before applying
+- Dangerous volume paths rejected
+- All changes logged for audit
+- Cannot exceed host system limits
+- Updates are atomic (all or nothing)
+
+## Status Codes
+
+- `202 Accepted` - Update started successfully
+- `400 Bad Request` - Invalid parameters
+- `404 Not Found` - Container not found
+- `500 Internal Server Error` - Update failed

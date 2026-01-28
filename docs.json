@@ -65,8 +65,10 @@
             "group": "API Reference",
             "pages": [
               "lightd/volumes",
+              "lightd/volume-quotas",
               "lightd/network",
               "lightd/containers",
+              "lightd/container-updates",
               "lightd/websocket",
               "lightd/remote"
             ]
