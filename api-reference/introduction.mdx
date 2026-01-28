@@ -1,14 +1,139 @@
 ---
-title: "Torch API documentation"
-description: "Torch is a panel Pkg.lat made for lightd. It is powered by rust and using Axum to handle endpoints."
+title: "Lightd API Documentation"
+description: "Lightd is a container management daemon that provides a REST API and WebSocket interface for managing Docker containers, volumes, and network resources."
 ---
 
-<Note>
-  The Torch API requires authentication, we have not currently implemented a way to use the client api without using your own session token.
-</Note>
+## Overview
 
-## Tenant System
+Lightd is a fast, cross-platform Docker daemon built with Rust and Axum, designed to manage containers without the hassle. It provides a comprehensive REST API and real-time WebSocket interface for container lifecycle management.
 
-A tenant is basically a subuser, this tenat can use your resources and control your servers but they cannot **Reset passwords**, **Add biometrics** and handle anything related to auth. There are two types of tenants, the main user tenant and subusers who aren't owners.
+## Base URL
 
-> Coming soon..
+Default: `http://localhost:8070`
+
+## Key Features
+
+- **Container Management** - Full lifecycle control (create, start, stop, restart, reinstall)
+- **Volume Management** - Persistent storage with file operations
+- **Network Pool** - Port allocation and management
+- **WebSocket Interface** - Real-time container monitoring and control
+- **Remote Sync** - Multi-server synchronization support
+- **Resource Limits** - CPU and memory constraints
+- **Pattern Detection** - Automatic server ready state detection
+
+## Authentication
+
+All protected routes require Bearer token authentication:
+
+```http
+Authorization: Bearer lightd_<your-token>
+Accept: Application/vnd.pkglatv1+json
+```
+
+See the [Authentication Guide](/api-reference/authentication) for token management.
+
+## Quick Start
+
+<Steps>
+  <Step title="Get your API token">
+    ```bash
+    ./lightd --token what
+    ```
+  </Step>
+  
+  <Step title="Create a volume">
+    ```bash
+    curl -X POST http://localhost:8070/volumes \
+      -H "Authorization: Bearer lightd_token" \
+      -H "Accept: Application/vnd.pkglatv1+json"
+    ```
+  </Step>
+  
+  <Step title="Create a container">
+    ```bash
+    curl -X POST http://localhost:8070/containers \
+      -H "Authorization: Bearer lightd_token" \
+      -H "Accept: Application/vnd.pkglatv1+json" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "internal_id": "my-server",
+        "image": "ubuntu:22.04",
+        "volume_id": "your-volume-id",
+        "startup_command": "bash",
+        "limits": {"memory": 536870912, "cpu": 1.0}
+      }'
+    ```
+  </Step>
+  
+  <Step title="Monitor via WebSocket">
+    ```javascript
+    const ws = new WebSocket('ws://localhost:8070/ws/my-server?token=lightd_token');
+    ws.onmessage = (e) => console.log(JSON.parse(e.data));
+    ```
+  </Step>
+</Steps>
+
+## API Sections
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api-reference/authentication">
+    Token management and security
+  </Card>
+  <Card title="Volumes" icon="hard-drive" href="/api-reference/volumes">
+    Persistent storage and file operations
+  </Card>
+  <Card title="Network" icon="network-wired" href="/api-reference/network">
+    Port allocation and management
+  </Card>
+  <Card title="Containers" icon="box" href="/api-reference/containers">
+    Container lifecycle management
+  </Card>
+  <Card title="WebSocket" icon="bolt" href="/api-reference/websocket">
+    Real-time monitoring and control
+  </Card>
+  <Card title="Remote Sync" icon="cloud" href="/api-reference/remote">
+    Multi-server synchronization
+  </Card>
+</CardGroup>
+
+## Response Format
+
+### Success Response
+```json
+{
+  "success": true,
+  "data": { ... }
+}
+```
+
+### Error Response
+```json
+{
+  "error": "Error message description"
+}
+```
+
+## Status Codes
+
+- `200 OK` - Request succeeded
+- `201 Created` - Resource created successfully
+- `400 Bad Request` - Invalid request parameters
+- `401 Unauthorized` - Missing or invalid authentication
+- `403 Forbidden` - Invalid vendor header or origin
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+## Container States
+
+- `installing` - Container is being created and installed
+- `ready` - Container is ready to start
+- `starting` - Container is starting up
+- `running` - Container is running (pattern matched)
+- `stopping` - Container is stopping
+- `failed` - Installation or operation failed
+
+## Need Help?
+
+<Card title="Join our Discord" icon="discord" href="https://discord.gg/mFkRgJwDXv">
+  Get support from the community and developers
+</Card>

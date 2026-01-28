@@ -1,0 +1,410 @@
+---
+title: "Quick Start Guide"
+description: "Get started with Lightd API in minutes. Learn the common workflow for creating and managing containers."
+---
+
+## Prerequisites
+
+- Lightd daemon running
+- Docker installed and running
+- API token (see [Authentication](/api-reference/authentication))
+
+## Common Workflow
+
+This guide walks through creating a complete container setup from scratch.
+
+### 1. Create a Volume
+
+Volumes provide persistent storage for your containers.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/volumes', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const { volume_id } = await response.json();
+console.log('Volume ID:', volume_id);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'http://localhost:8070/volumes',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+volume_id = response.json()['volume_id']
+print(f'Volume ID: {volume_id}')
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "volume_id": "d6764075-c5f1-4045-9fb3-85315b85cb0f",
+  "path": "/storage/volumes/d6764075-c5f1-4045-9fb3-85315b85cb0f"
+}
+```
+
+### 2. Write Files to Volume
+
+Add configuration files or scripts to your volume.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/d6764075/files \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "config.yml",
+    "content": "server-port: 25565\nmax-players: 20"
+  }'
+```
+
+```javascript JavaScript
+await fetch(`http://localhost:8070/volumes/${volume_id}/files`, {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    path: 'config.yml',
+    content: 'server-port: 25565\nmax-players: 20'
+  })
+});
+```
+
+```python Python
+requests.post(
+    f'http://localhost:8070/volumes/{volume_id}/files',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'path': 'config.yml',
+        'content': 'server-port: 25565\nmax-players: 20'
+    }
+)
+```
+</CodeGroup>
+
+### 3. Add Network Port (Optional)
+
+If your container needs network access, add ports to the pool.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/network/ports \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip": "0.0.0.0",
+    "port": 25565,
+    "protocol": "tcp"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/network/ports', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ip: '0.0.0.0',
+    port: 25565,
+    protocol: 'tcp'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/network/ports',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'ip': '0.0.0.0',
+        'port': 25565,
+        'protocol': 'tcp'
+    }
+)
+```
+</CodeGroup>
+
+### 4. Create Container
+
+Create a container with your volume and configuration.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "internal_id": "my-server-001",
+    "image": "ubuntu:22.04",
+    "volume_id": "d6764075-c5f1-4045-9fb3-85315b85cb0f",
+    "startup_command": "bash -c \"while true; do echo Ready; sleep 1; done\"",
+    "start_pattern": "Ready",
+    "ports": [
+      {"ip": "0.0.0.0", "port": 25565, "protocol": "tcp"}
+    ],
+    "limits": {
+      "memory": 536870912,
+      "cpu": 1.0
+    }
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    internal_id: 'my-server-001',
+    image: 'ubuntu:22.04',
+    volume_id: volume_id,
+    startup_command: 'bash -c "while true; do echo Ready; sleep 1; done"',
+    start_pattern: 'Ready',
+    ports: [
+      { ip: '0.0.0.0', port: 25565, protocol: 'tcp' }
+    ],
+    limits: {
+      memory: 536870912,
+      cpu: 1.0
+    }
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'internal_id': 'my-server-001',
+        'image': 'ubuntu:22.04',
+        'volume_id': volume_id,
+        'startup_command': 'bash -c "while true; do echo Ready; sleep 1; done"',
+        'start_pattern': 'Ready',
+        'ports': [
+            {'ip': '0.0.0.0', 'port': 25565, 'protocol': 'tcp'}
+        ],
+        'limits': {
+            'memory': 536870912,
+            'cpu': 1.0
+        }
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Container creation started",
+  "internal_id": "my-server-001",
+  "state": "installing"
+}
+```
+
+### 5. Monitor via WebSocket
+
+Connect to the WebSocket to monitor installation progress and container output.
+
+<CodeGroup>
+```javascript JavaScript
+const ws = new WebSocket('ws://localhost:8070/ws/my-server-001?token=lightd_token');
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  
+  if (data.event === 'event') {
+    console.log('State:', data.data);
+  } else if (data.event === 'console') {
+    console.log('Output:', data.data);
+  }
+};
+
+ws.onopen = () => {
+  console.log('Connected to container');
+};
+```
+
+```python Python
+import websocket
+import json
+
+def on_message(ws, message):
+    data = json.loads(message)
+    
+    if data['event'] == 'event':
+        print(f"State: {data['data']}")
+    elif data['event'] == 'console':
+        print(f"Output: {data['data']}")
+
+ws = websocket.WebSocketApp(
+    'ws://localhost:8070/ws/my-server-001?token=lightd_token',
+    on_message=on_message
+)
+
+ws.run_forever()
+```
+</CodeGroup>
+
+### 6. Start Container
+
+Once the container state is `ready`, start it.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-server-001/start \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001/start', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-server-001/start',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+## Complete Example Script
+
+Here's a complete bash script that sets up a Minecraft server:
+
+```bash
+#!/bin/bash
+
+TOKEN="lightd_your_token_here"
+BASE_URL="http://localhost:8070"
+
+# 1. Create volume
+VOLUME=$(curl -s -X POST $BASE_URL/volumes \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: Application/vnd.pkglatv1+json" | jq -r '.volume_id')
+
+echo "Created volume: $VOLUME"
+
+# 2. Write server properties
+curl -X POST $BASE_URL/volumes/$VOLUME/files \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "server.properties", "content": "server-port=25565\nmax-players=20"}'
+
+# 3. Add port to pool
+curl -X POST $BASE_URL/network/ports \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{"ip": "0.0.0.0", "port": 25565, "protocol": "tcp"}'
+
+# 4. Create container
+curl -X POST $BASE_URL/containers \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"internal_id\": \"minecraft-001\",
+    \"image\": \"openjdk:17-slim\",
+    \"volume_id\": \"$VOLUME\",
+    \"startup_command\": \"java -Xmx1G -jar server.jar nogui\",
+    \"start_pattern\": \"Done\",
+    \"ports\": [{\"ip\": \"0.0.0.0\", \"port\": 25565, \"protocol\": \"tcp\"}],
+    \"limits\": {\"memory\": 1073741824, \"cpu\": 2.0},
+    \"install_script\": \"#!/bin/bash\\nwget https://example.com/server.jar\\necho 'eula=true' > eula.txt\"
+  }"
+
+echo "Container created. Waiting for installation..."
+
+# 5. Wait for ready state (poll every 2 seconds)
+while true; do
+  STATE=$(curl -s -X GET $BASE_URL/containers/minecraft-001 \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Accept: Application/vnd.pkglatv1+json" | jq -r '.install_state')
+  
+  echo "Current state: $STATE"
+  
+  if [ "$STATE" = "ready" ]; then
+    break
+  fi
+  
+  sleep 2
+done
+
+# 6. Start container
+curl -X POST $BASE_URL/containers/minecraft-001/start \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+
+echo "Container started!"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Volumes API" icon="hard-drive" href="/api-reference/volumes">
+    Learn about file operations and compression
+  </Card>
+  <Card title="Containers API" icon="box" href="/api-reference/containers">
+    Explore container lifecycle management
+  </Card>
+  <Card title="WebSocket API" icon="bolt" href="/api-reference/websocket">
+    Real-time monitoring and control
+  </Card>
+  <Card title="Response Examples" icon="code" href="/api-reference/response-examples">
+    See all API response formats
+  </Card>
+</CardGroup>

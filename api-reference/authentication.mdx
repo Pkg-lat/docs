@@ -1,0 +1,264 @@
+---
+title: "Authentication"
+description: "Lightd uses Bearer token authentication with additional security headers for all protected routes."
+---
+
+## Token Format
+
+Tokens must follow this format:
+```
+lightd_<random-string>
+```
+
+Example: `lightd_ad2f7fc49ed640429c450e14ed07c8d5`
+
+Tokens must be at least 20 characters long (including the `lightd_` prefix).
+
+## Required Headers
+
+All protected routes require these headers:
+
+```http
+Authorization: Bearer lightd_<your-token>
+Accept: Application/vnd.pkglatv1+json
+```
+
+## Token Management CLI
+
+### View Current Token
+
+```bash
+./lightd --token what
+```
+
+**Output:**
+```
+Current Token: lightd_ad2f7fc49ed640429c450e14ed07c8d5
+```
+
+### Generate New Random Token
+
+```bash
+./lightd --token reset
+```
+
+**Output:**
+```
+✓ Token reset successfully!
+New Token: lightd_f3a8b9c2d1e4f5a6b7c8d9e0f1a2b3c4
+
+⚠️  Warning: The old token is now invalid.
+   Update your applications with the new token.
+```
+
+### Set Custom Token
+
+```bash
+./lightd --token set
+```
+
+**Interactive prompt:**
+```
+Enter new token (must start with 'lightd_' and be at least 20 characters):
+> lightd_my_custom_secure_token_here
+
+✓ Token set successfully!
+New Token: lightd_my_custom_secure_token_here
+```
+
+## Token Storage
+
+Tokens are stored in `config.json`:
+
+```json
+{
+  "authorization": {
+    "enabled": true,
+    "token": "lightd_ad2f7fc49ed640429c450e14ed07c8d5"
+  }
+}
+```
+
+## Programmatic Token Generation
+
+### Generate Token with TTL
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/auth/tokens \
+  -H "Authorization: Bearer lightd_master_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ttl": "1h",
+    "remove_on_use": false
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/auth/tokens', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_master_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ttl: '1h',
+    remove_on_use: false
+  })
+});
+
+const data = await response.json();
+console.log(data.token);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'http://localhost:8070/auth/tokens',
+    headers={
+        'Authorization': 'Bearer lightd_master_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'ttl': '1h',
+        'remove_on_use': False
+    }
+)
+
+data = response.json()
+print(data['token'])
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "ttl": "1h",
+  "remove_on_use": false
+}
+```
+
+**TTL Format:**
+- `15m` - 15 minutes
+- `1h` - 1 hour
+- `30s` - 30 seconds
+- `7d` - 7 days
+
+**Response:**
+```json
+{
+  "token": "lightd_generated_token_here",
+  "expires_at": "2026-01-28T15:30:00Z"
+}
+```
+
+### Single-Use Tokens
+
+Set `remove_on_use: true` to create tokens that expire after first use:
+
+```json
+{
+  "ttl": "1h",
+  "remove_on_use": true
+}
+```
+
+<Warning>
+Single-use tokens are automatically deleted after their first successful authentication.
+</Warning>
+
+## Token Validation
+
+Tokens are validated on every request:
+- Must start with `lightd_`
+- Must match token in config.json or exist in token database
+- Must not be expired (for programmatic tokens)
+- Automatically removed if `remove_on_use: true`
+
+## Token Cleanup
+
+Expired tokens are automatically cleaned up every 5 minutes by the daemon.
+
+## Public Routes
+
+These routes don't require authentication:
+
+- `GET /api/v1/public/ping` - Health check
+
+## Example Authenticated Request
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/volumes \
+  -H "Authorization: Bearer lightd_ad2f7fc49ed640429c450e14ed07c8d5" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/volumes', {
+  headers: {
+    'Authorization': 'Bearer lightd_ad2f7fc49ed640429c450e14ed07c8d5',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'http://localhost:8070/volumes',
+    headers={
+        'Authorization': 'Bearer lightd_ad2f7fc49ed640429c450e14ed07c8d5',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Store tokens securely">
+    Use environment variables or secrets managers instead of hardcoding tokens in your application code.
+  </Accordion>
+  
+  <Accordion title="Use short TTLs">
+    For temporary access, use short-lived tokens (15m-1h) to minimize security risk.
+  </Accordion>
+  
+  <Accordion title="Rotate master token regularly">
+    Use `--token reset` to generate a new master token periodically.
+  </Accordion>
+  
+  <Accordion title="WebSocket authentication">
+    For WebSocket connections, pass the token as a query parameter: `ws://host/ws/:id?token=<token>`
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+**Missing Token:**
+```json
+{
+  "error": "Missing or invalid authorization token"
+}
+```
+
+**Invalid Token:**
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+**Expired Token:**
+```json
+{
+  "error": "Token expired"
+}
+```
