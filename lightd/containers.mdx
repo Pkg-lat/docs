@@ -1,0 +1,580 @@
+---
+title: "Container Management"
+description: "Full lifecycle management of Docker containers with state tracking, resource limits, and pattern detection."
+---
+
+## Overview
+
+Containers are Docker containers managed by Lightd with automatic lifecycle tracking and state management.
+
+## Container States
+
+- `installing` - Container is being created and installed
+- `ready` - Container is ready to start
+- `starting` - Container is starting up
+- `running` - Container is running (pattern matched)
+- `stopping` - Container is stopping
+- `failed` - Installation or operation failed
+
+## Create Container
+
+Create a new container with optional install script and resource limits.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "internal_id": "my-server-001",
+    "image": "ubuntu:22.04",
+    "volume_id": "d6764075-c5f1-4045-9fb3-85315b85cb0f",
+    "startup_command": "bash -c \"while true; do echo Hello; sleep 1; done\"",
+    "start_pattern": "Hello",
+    "ports": [
+      {"ip": "0.0.0.0", "port": 25565, "protocol": "tcp"}
+    ],
+    "limits": {
+      "memory": 536870912,
+      "cpu": 1.0
+    },
+    "mount": {
+      "/custom/path": "/host/path"
+    },
+    "install_script": "#!/bin/bash\napt-get update\napt-get install -y curl"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    internal_id: 'my-server-001',
+    image: 'ubuntu:22.04',
+    volume_id: 'd6764075-c5f1-4045-9fb3-85315b85cb0f',
+    startup_command: 'bash -c "while true; do echo Hello; sleep 1; done"',
+    start_pattern: 'Hello',
+    ports: [
+      { ip: '0.0.0.0', port: 25565, protocol: 'tcp' }
+    ],
+    limits: {
+      memory: 536870912,
+      cpu: 1.0
+    },
+    install_script: '#!/bin/bash\napt-get update\napt-get install -y curl'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'internal_id': 'my-server-001',
+        'image': 'ubuntu:22.04',
+        'volume_id': 'd6764075-c5f1-4045-9fb3-85315b85cb0f',
+        'startup_command': 'bash -c "while true; do echo Hello; sleep 1; done"',
+        'start_pattern': 'Hello',
+        'ports': [
+            {'ip': '0.0.0.0', 'port': 25565, 'protocol': 'tcp'}
+        ],
+        'limits': {
+            'memory': 536870912,
+            'cpu': 1.0
+        },
+        'install_script': '#!/bin/bash\napt-get update\napt-get install -y curl'
+    }
+)
+```
+</CodeGroup>
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `internal_id` | string | Yes | Unique identifier for the container |
+| `image` | string | Yes | Docker image (e.g., `ubuntu:22.04`, `node:18`) |
+| `volume_id` | string | Yes | Volume UUID for persistent storage |
+| `startup_command` | string | Yes | Command to run when container starts |
+| `start_pattern` | string | No | Regex pattern to detect when server is ready |
+| `ports` | array | No | Array of port bindings |
+| `limits` | object | No | Resource limits (memory in bytes, cpu in cores) |
+| `mount` | object | No | Custom volume mounts |
+| `install_script` | string | No | Bash script to run during installation |
+
+**Response:**
+```json
+{
+  "message": "Container creation started",
+  "internal_id": "my-server-001",
+  "state": "installing"
+}
+```
+
+<Info>
+Container creation is asynchronous. Monitor progress via WebSocket or poll the container state endpoint.
+</Info>
+
+## Get Container State
+
+Retrieve detailed information about a container.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/containers/my-server-001 \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/containers/my-server-001', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/containers/my-server-001',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "internal_id": "my-server-001",
+  "container_id": "a1b2c3d4e5f6",
+  "volume_id": "d6764075-c5f1-4045-9fb3-85315b85cb0f",
+  "image": "ubuntu:22.04",
+  "startup_command": "bash -c 'while true; do echo Hello; sleep 1; done'",
+  "start_pattern": "Hello",
+  "install_state": "ready",
+  "ports": [
+    {
+      "ip": "0.0.0.0",
+      "port": 25565,
+      "protocol": "tcp"
+    }
+  ],
+  "limits": {
+    "memory": 536870912,
+    "cpu": 1.0
+  },
+  "mount": {},
+  "created_at": 1706450000,
+  "updated_at": 1706450100
+}
+```
+
+## List All Containers
+
+Get a list of all containers.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/containers \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/containers', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/containers',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "containers": [
+    {
+      "internal_id": "my-server-001",
+      "container_id": "a1b2c3d4e5f6",
+      "install_state": "ready",
+      "image": "ubuntu:22.04"
+    }
+  ]
+}
+```
+
+## Delete Container
+
+Remove a container and its Docker instance.
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE http://localhost:8070/containers/my-server-001 \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+requests.delete(
+    'http://localhost:8070/containers/my-server-001',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Container deleted successfully"
+}
+```
+
+<Warning>
+This removes the container from Docker and deletes the database entry. Volume data is preserved.
+</Warning>
+
+## Power Actions
+
+### Start Container
+
+Start a stopped container.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-server-001/start \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001/start', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-server-001/start',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Container start initiated",
+  "internal_id": "my-server-001"
+}
+```
+
+### Kill Container
+
+Forcefully stop a running container (SIGKILL).
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-server-001/kill \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001/kill', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-server-001/kill',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Container kill initiated",
+  "internal_id": "my-server-001"
+}
+```
+
+### Restart Container
+
+Restart a running container.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-server-001/restart \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001/restart', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-server-001/restart',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Container restart initiated",
+  "internal_id": "my-server-001"
+}
+```
+
+## Reinstall Container
+
+Recreate the container with a new image or install script.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-server-001/reinstall \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image": "ubuntu:22.04",
+    "install_script": "#!/bin/bash\napt-get update"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001/reinstall', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    image: 'ubuntu:22.04',
+    install_script: '#!/bin/bash\napt-get update'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-server-001/reinstall',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'image': 'ubuntu:22.04',
+        'install_script': '#!/bin/bash\napt-get update'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Container reinstall started",
+  "internal_id": "my-server-001"
+}
+```
+
+<Info>
+Reinstall removes the old Docker container and creates a new one. Volume data is preserved.
+</Info>
+
+## Rebind Network
+
+Change container port bindings without losing data.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/containers/my-server-001/rebind-network \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ports": [
+      {"ip": "0.0.0.0", "port": 25566, "protocol": "tcp"}
+    ]
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/containers/my-server-001/rebind-network', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ports: [
+      { ip: '0.0.0.0', port: 25566, protocol: 'tcp' }
+    ]
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/containers/my-server-001/rebind-network',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'ports': [
+            {'ip': '0.0.0.0', 'port': 25566, 'protocol': 'tcp'}
+        ]
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Network rebinding started",
+  "internal_id": "my-server-001"
+}
+```
+
+**Process:**
+1. Validates new port bindings
+2. Removes old Docker container
+3. Creates new container with new ports
+4. Updates database
+5. Old ports marked as available, new ports marked as in use
+
+## Resource Limits
+
+**Memory:**
+- Specified in bytes
+- Example: `536870912` = 512MB, `1073741824` = 1GB
+
+**CPU:**
+- Specified as number of cores
+- Example: `1.0` = 1 core, `0.5` = half core, `2.0` = 2 cores
+
+## Startup Pattern Detection
+
+The `start_pattern` field accepts regex patterns to detect when a server is ready:
+
+**Example patterns:**
+- `"Server started"` - Exact match
+- `"Hello"` - Simple substring
+- `"Server.*ready"` - Regex pattern
+- `"Listening on port \\d+"` - Port detection
+
+When the pattern matches in console output, container state transitions from `starting` to `running`.
+
+## Volume Mounts
+
+Every container has these mounts:
+- `/home/container` → Volume storage (persistent)
+- `/app/data` → Container data directory (entrypoint.sh, install.sh)
+
+Custom mounts can be added via the `mount` field.
+
+## Error Responses
+
+**Container Not Found:**
+```json
+{
+  "error": "Container not found"
+}
+```
+
+**Container Installing:**
+```json
+{
+  "error": "Cannot rebind network while container is installing"
+}
+```
+
+**Invalid Port Binding:**
+```json
+{
+  "error": "Port not found in network pool"
+}
+```

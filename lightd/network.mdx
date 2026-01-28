@@ -1,0 +1,437 @@
+---
+title: "Network Pool Management"
+description: "Manage IP:port combinations for container port bindings with automatic iptables integration."
+---
+
+## Overview
+
+The network pool manages available ports for container bindings. Ports must be added to the pool before they can be used in containers.
+
+## Add Port to Pool
+
+Add a port to the available pool.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/network/ports \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ip": "0.0.0.0",
+    "port": 25565,
+    "protocol": "tcp"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/network/ports', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ip: '0.0.0.0',
+    port: 25565,
+    protocol: 'tcp'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/network/ports',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'ip': '0.0.0.0',
+        'port': 25565,
+        'protocol': 'tcp'
+    }
+)
+```
+</CodeGroup>
+
+**Request Body:**
+- `ip` (required) - IP address (e.g., `0.0.0.0`, `127.0.0.1`)
+- `port` (required) - Port number (1-65535)
+- `protocol` (required) - Protocol type: `tcp` or `udp`
+
+**Response:**
+```json
+{
+  "message": "Port added to pool",
+  "ip": "0.0.0.0",
+  "port": 25565,
+  "protocol": "tcp"
+}
+```
+
+<Info>
+On Unix systems, Lightd automatically adds iptables rules for the port (requires root/sudo).
+</Info>
+
+## Get Specific Port
+
+Retrieve information about a specific port.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/network/ports/0.0.0.0/25565 \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/network/ports/0.0.0.0/25565', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/network/ports/0.0.0.0/25565',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "ip": "0.0.0.0",
+  "port": 25565,
+  "protocol": "tcp",
+  "in_use": false
+}
+```
+
+## List All Ports
+
+Get all ports in the pool.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/network/ports \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/network/ports', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/network/ports',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "ports": [
+    {
+      "ip": "0.0.0.0",
+      "port": 25565,
+      "protocol": "tcp",
+      "in_use": false
+    },
+    {
+      "ip": "0.0.0.0",
+      "port": 25566,
+      "protocol": "tcp",
+      "in_use": true
+    },
+    {
+      "ip": "0.0.0.0",
+      "port": 19132,
+      "protocol": "udp",
+      "in_use": false
+    }
+  ]
+}
+```
+
+## Get Random Available Port
+
+Get a random available port from the pool.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/network/ports/random \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/network/ports/random', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/network/ports/random',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "ip": "0.0.0.0",
+  "port": 25567,
+  "protocol": "tcp",
+  "in_use": false
+}
+```
+
+<Note>
+This endpoint does NOT mark the port as in use. It only returns an available port.
+</Note>
+
+## Mark Port as In Use
+
+Update the usage status of a port.
+
+<CodeGroup>
+```bash cURL
+curl -X PUT http://localhost:8070/network/ports/0.0.0.0/25565/use \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{"in_use": true}'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/network/ports/0.0.0.0/25565/use', {
+  method: 'PUT',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ in_use: true })
+});
+```
+
+```python Python
+requests.put(
+    'http://localhost:8070/network/ports/0.0.0.0/25565/use',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={'in_use': True}
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Port usage updated",
+  "ip": "0.0.0.0",
+  "port": 25565,
+  "in_use": true
+}
+```
+
+## Delete Port
+
+Remove a port from the pool.
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE http://localhost:8070/network/ports/0.0.0.0/25565 \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/network/ports/0.0.0.0/25565', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+```
+
+```python Python
+requests.delete(
+    'http://localhost:8070/network/ports/0.0.0.0/25565',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Port deleted from pool"
+}
+```
+
+## Bulk Delete Ports
+
+Delete multiple ports at once.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/network/ports/bulk-delete \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ports": [
+      {"ip": "0.0.0.0", "port": 25565},
+      {"ip": "0.0.0.0", "port": 25566}
+    ]
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/network/ports/bulk-delete', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    ports: [
+      { ip: '0.0.0.0', port: 25565 },
+      { ip: '0.0.0.0', port: 25566 }
+    ]
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/network/ports/bulk-delete',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'ports': [
+            {'ip': '0.0.0.0', 'port': 25565},
+            {'ip': '0.0.0.0', 'port': 25566}
+        ]
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Deleted 2 ports from pool",
+  "deleted_count": 2
+}
+```
+
+## Port Binding Workflow
+
+<Steps>
+  <Step title="Add ports to pool">
+    Add all ports you plan to use to the network pool.
+  </Step>
+  
+  <Step title="Create container with ports">
+    Reference the ports when creating a container. Ports are automatically marked as `in_use: true`.
+  </Step>
+  
+  <Step title="Rebind if needed">
+    Use the container rebind-network endpoint to change port bindings. Old ports are freed, new ports are marked as in use.
+  </Step>
+</Steps>
+
+## iptables Integration
+
+On Unix systems, Lightd automatically manages iptables rules:
+
+**TCP Port:**
+```bash
+iptables -A INPUT -p tcp --dport 25565 -j ACCEPT
+```
+
+**UDP Port:**
+```bash
+iptables -A INPUT -p udp --dport 19132 -j ACCEPT
+```
+
+<Warning>
+iptables commands require root/sudo privileges. Ensure Lightd has appropriate permissions.
+</Warning>
+
+## Error Responses
+
+**Port Already Exists:**
+```json
+{
+  "error": "Port already exists in pool"
+}
+```
+
+**Port Not Found:**
+```json
+{
+  "error": "Port not found in pool"
+}
+```
+
+**No Available Ports:**
+```json
+{
+  "error": "No available ports in pool"
+}
+```

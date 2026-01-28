@@ -1,0 +1,451 @@
+---
+title: "Volume Management"
+description: "Volumes provide persistent storage for containers with file operations, compression, and security features."
+---
+
+## Overview
+
+Volumes are persistent storage units identified by UUIDs. Each volume is automatically mounted to `/home/container` inside containers.
+
+## Create Volume
+
+Create a new volume for persistent storage.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/volumes', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'http://localhost:8070/volumes',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "volume_id": "d6764075-c5f1-4045-9fb3-85315b85cb0f",
+  "path": "/storage/volumes/d6764075-c5f1-4045-9fb3-85315b85cb0f"
+}
+```
+
+## Write File to Volume
+
+Write or overwrite a file in the volume.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/d6764075/files \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "config/server.properties",
+    "content": "server-port=25565\nmax-players=20"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/volumes/d6764075/files', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    path: 'config/server.properties',
+    content: 'server-port=25565\nmax-players=20'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/volumes/d6764075/files',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'path': 'config/server.properties',
+        'content': 'server-port=25565\nmax-players=20'
+    }
+)
+```
+</CodeGroup>
+
+**Request Body:**
+- `path` (required) - Relative path within volume
+- `content` (required) - File content as string
+
+**Response:**
+```json
+{
+  "message": "File written successfully",
+  "path": "config/server.properties"
+}
+```
+
+<Warning>
+Path traversal attempts (e.g., `../../../etc/passwd`) are automatically blocked for security.
+</Warning>
+
+## Create Folder
+
+Create a directory in the volume.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/d6764075/folders \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{"path": "plugins/MyPlugin"}'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/volumes/d6764075/folders', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    path: 'plugins/MyPlugin'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/volumes/d6764075/folders',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={'path': 'plugins/MyPlugin'}
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Folder created successfully",
+  "path": "plugins/MyPlugin"
+}
+```
+
+## Copy File or Folder
+
+Copy files or directories within the volume.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/d6764075/copy \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "plugins",
+    "destination": "backup/plugins"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/volumes/d6764075/copy', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    source: 'plugins',
+    destination: 'backup/plugins'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/volumes/d6764075/copy',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'source': 'plugins',
+        'destination': 'backup/plugins'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Copied successfully",
+  "source": "plugins",
+  "destination": "backup/plugins"
+}
+```
+
+## List Files
+
+List files and directories in a volume path.
+
+<CodeGroup>
+```bash cURL
+curl -X GET "http://localhost:8070/volumes/d6764075/files?path=plugins" \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/volumes/d6764075/files?path=plugins', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const data = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/volumes/d6764075/files',
+    params={'path': 'plugins'},
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+data = response.json()
+```
+</CodeGroup>
+
+**Query Parameters:**
+- `path` (optional) - Subdirectory to list (default: root)
+
+**Response:**
+```json
+{
+  "files": [
+    {
+      "name": "MyPlugin",
+      "type": "directory",
+      "size": 0
+    },
+    {
+      "name": "config.yml",
+      "type": "file",
+      "size": 1024
+    }
+  ]
+}
+```
+
+## Compress Volume
+
+Create an archive from volume contents.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/d6764075/compress \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "format": "tar.gz",
+    "output_name": "backup"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/volumes/d6764075/compress', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    format: 'tar.gz',
+    output_name: 'backup'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/volumes/d6764075/compress',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'format': 'tar.gz',
+        'output_name': 'backup'
+    }
+)
+```
+</CodeGroup>
+
+**Supported Formats:**
+- `zip` - ZIP archive
+- `tar` - TAR archive
+- `tar.gz` - Gzipped TAR
+- `tar.bz2` - Bzip2 compressed TAR
+
+**Response:**
+```json
+{
+  "message": "Compression successful",
+  "archive_path": "backup.tar.gz",
+  "size": 2048576
+}
+```
+
+## Decompress Archive
+
+Extract an archive within the volume.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/volumes/d6764075/decompress \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "archive_path": "backup.tar.gz",
+    "destination": "restored"
+  }'
+```
+
+```javascript JavaScript
+await fetch('http://localhost:8070/volumes/d6764075/decompress', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    archive_path: 'backup.tar.gz',
+    destination: 'restored'
+  })
+});
+```
+
+```python Python
+requests.post(
+    'http://localhost:8070/volumes/d6764075/decompress',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'archive_path': 'backup.tar.gz',
+        'destination': 'restored'
+    }
+)
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "message": "Decompression successful",
+  "destination": "restored"
+}
+```
+
+## Volume Path Structure
+
+Volumes are stored at:
+```
+{storage.volumes_path}/{volume_id}/
+```
+
+Example structure:
+```
+/storage/volumes/d6764075-c5f1-4045-9fb3-85315b85cb0f/
+├── config/
+│   └── server.properties
+├── plugins/
+│   └── MyPlugin/
+└── backup.tar.gz
+```
+
+## Security Features
+
+<AccordionGroup>
+  <Accordion title="Path Traversal Protection">
+    All paths are validated to prevent escaping volume boundaries. Patterns like `..`, absolute paths (`/`, `C:`), and empty paths are rejected.
+  </Accordion>
+  
+  <Accordion title="Symlink Validation">
+    Symlinks are resolved and checked to ensure they stay within the volume.
+  </Accordion>
+  
+  <Accordion title="Automatic Mounting">
+    Volumes are automatically mounted to `/home/container` inside containers.
+  </Accordion>
+</AccordionGroup>
+
+## Error Responses
+
+**Invalid Path:**
+```json
+{
+  "error": "Invalid path: path traversal detected"
+}
+```
+
+**Volume Not Found:**
+```json
+{
+  "error": "Volume not found"
+}
+```
+
+**File Already Exists:**
+```json
+{
+  "error": "File already exists at path: config.yml"
+}
+```

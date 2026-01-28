@@ -56,25 +56,25 @@
           {
             "group": "Getting Started",
             "pages": [
-              "api-reference/introduction",
-              "api-reference/authentication",
-              "api-reference/quick-start"
+              "lightd/introduction",
+              "lightd/authentication",
+              "lightd/quick-start"
             ]
           },
           {
             "group": "API Reference",
             "pages": [
-              "api-reference/volumes",
-              "api-reference/network",
-              "api-reference/containers",
-              "api-reference/websocket",
-              "api-reference/remote"
+              "lightd/volumes",
+              "lightd/network",
+              "lightd/containers",
+              "lightd/websocket",
+              "lightd/remote"
             ]
           },
           {
             "group": "Examples",
             "pages": [
-              "api-reference/response-examples"
+              "lightd/response-examples"
             ]
           }
         ]
