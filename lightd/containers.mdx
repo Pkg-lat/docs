@@ -33,7 +33,7 @@ curl -X POST http://localhost:8070/containers \
     "startup_command": "bash -c \"while true; do echo Hello; sleep 1; done\"",
     "start_pattern": "Hello",
     "ports": [
-      {"ip": "0.0.0.0", "port": 25565, "protocol": "tcp"}
+      {"container_port": 3000, "host_port": 25565, "protocol": "tcp"}
     ],
     "limits": {
       "memory": 536870912,
@@ -173,8 +173,8 @@ data = response.json()
   "install_state": "ready",
   "ports": [
     {
-      "ip": "0.0.0.0",
-      "port": 25565,
+      "container_port": 3000,
+      "host_port": 25565,
       "protocol": "tcp"
     }
   ],

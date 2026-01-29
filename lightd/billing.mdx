@@ -1,0 +1,514 @@
+---
+title: "Billing & Usage Tracking"
+description: "Real-time resource usage monitoring and cost estimation for containers and volumes with flexible billing rates."
+---
+
+## Overview
+
+Lightd includes a comprehensive billing system that tracks resource usage and calculates costs for containers and volumes. The system monitors CPU, memory, storage, and network usage in real-time.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Real-time Monitoring" icon="chart-line">
+    Tracks CPU, memory, storage, and network usage every 60 seconds
+  </Card>
+  <Card title="Flexible Billing Rates" icon="dollar-sign">
+    Configurable per-resource pricing
+  </Card>
+  <Card title="Multiple Time Windows" icon="clock">
+    Hourly, daily, and monthly cost estimates
+  </Card>
+  <Card title="Container-level Tracking" icon="box">
+    Per-container resource usage and costs
+  </Card>
+  <Card title="Volume-level Tracking" icon="hard-drive">
+    Storage costs for volumes
+  </Card>
+  <Card title="Async Collection" icon="bolt">
+    Non-blocking metrics gathering
+  </Card>
+</CardGroup>
+
+## Configuration
+
+Enable billing monitoring in `config.json`:
+
+```json
+{
+  "monitoring": {
+    "enabled": true,
+    "interval_ms": 60000,
+    "billing": {
+      "memory_per_gb_hour": 0.01,
+      "cpu_per_vcpu_hour": 0.05,
+      "storage_per_gb_hour": 0.005,
+      "egress_per_gb": 0.12
+    }
+  }
+}
+```
+
+**Configuration Fields:**
+- `enabled` - Enable/disable billing monitoring
+- `interval_ms` - Collection interval in milliseconds (default: 60000 = 1 minute)
+- `memory_per_gb_hour` - Cost per GB of memory per hour
+- `cpu_per_vcpu_hour` - Cost per vCPU per hour
+- `storage_per_gb_hour` - Cost per GB of storage per hour
+- `egress_per_gb` - Cost per GB of network egress
+
+## Get Hourly Usage
+
+Get hourly resource usage and costs for a container.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/billing/usage/my-container/hourly \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/billing/usage/my-container/hourly', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const usage = await response.json();
+console.log(`Hourly cost: $${usage.total_cost}`);
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/billing/usage/my-container/hourly',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+usage = response.json()
+print(f"Hourly cost: ${usage['total_cost']}")
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "container_id": "my-container",
+  "period": "hourly",
+  "memory_usage_gb": 0.5,
+  "cpu_usage_vcpu": 0.25,
+  "storage_usage_gb": 2.0,
+  "network_egress_gb": 0.1,
+  "memory_cost": 0.005,
+  "cpu_cost": 0.0125,
+  "storage_cost": 0.01,
+  "egress_cost": 0.012,
+  "total_cost": 0.0395,
+  "timestamp": 1706450000
+}
+```
+
+## Get Daily Usage
+
+Get daily resource usage and costs for a container.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/billing/usage/my-container/daily \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/billing/usage/my-container/daily', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const usage = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/billing/usage/my-container/daily',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+usage = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "container_id": "my-container",
+  "period": "daily",
+  "memory_usage_gb": 12.0,
+  "cpu_usage_vcpu": 6.0,
+  "storage_usage_gb": 48.0,
+  "network_egress_gb": 2.4,
+  "memory_cost": 0.12,
+  "cpu_cost": 0.30,
+  "storage_cost": 0.24,
+  "egress_cost": 0.288,
+  "total_cost": 0.948,
+  "timestamp": 1706450000
+}
+```
+
+## Get Monthly Usage
+
+Get monthly resource usage and costs for a container.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/billing/usage/my-container/monthly \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/billing/usage/my-container/monthly', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const usage = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/billing/usage/my-container/monthly',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+usage = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "container_id": "my-container",
+  "period": "monthly",
+  "memory_usage_gb": 360.0,
+  "cpu_usage_vcpu": 180.0,
+  "storage_usage_gb": 1440.0,
+  "network_egress_gb": 72.0,
+  "memory_cost": 3.60,
+  "cpu_cost": 9.00,
+  "storage_cost": 7.20,
+  "egress_cost": 8.64,
+  "total_cost": 28.44,
+  "timestamp": 1706450000
+}
+```
+
+## Estimate Container Costs
+
+Estimate costs for a container configuration before creation.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/billing/estimate/container \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "memory_gb": 2.0,
+    "cpu_vcpu": 1.0,
+    "storage_gb": 10.0,
+    "egress_gb_per_month": 100.0
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/billing/estimate/container', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    memory_gb: 2.0,
+    cpu_vcpu: 1.0,
+    storage_gb: 10.0,
+    egress_gb_per_month: 100.0
+  })
+});
+
+const estimate = await response.json();
+```
+
+```python Python
+response = requests.post(
+    'http://localhost:8070/billing/estimate/container',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'memory_gb': 2.0,
+        'cpu_vcpu': 1.0,
+        'storage_gb': 10.0,
+        'egress_gb_per_month': 100.0
+    }
+)
+
+estimate = response.json()
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "memory_gb": 2.0,
+  "cpu_vcpu": 1.0,
+  "storage_gb": 10.0,
+  "egress_gb_per_month": 100.0
+}
+```
+
+**Response:**
+```json
+{
+  "hourly_cost": 0.155,
+  "daily_cost": 3.72,
+  "monthly_cost": 111.60,
+  "breakdown": {
+    "memory_cost_per_hour": 0.02,
+    "cpu_cost_per_hour": 0.05,
+    "storage_cost_per_hour": 0.05,
+    "egress_cost_per_month": 12.00
+  }
+}
+```
+
+## Estimate Volume Costs
+
+Estimate costs for a volume configuration.
+
+<CodeGroup>
+```bash cURL
+curl -X POST http://localhost:8070/billing/estimate/volume \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "storage_gb": 50.0
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/billing/estimate/volume', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    storage_gb: 50.0
+  })
+});
+
+const estimate = await response.json();
+```
+
+```python Python
+response = requests.post(
+    'http://localhost:8070/billing/estimate/volume',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={'storage_gb': 50.0}
+)
+
+estimate = response.json()
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "storage_gb": 50.0
+}
+```
+
+**Response:**
+```json
+{
+  "hourly_cost": 0.25,
+  "daily_cost": 6.00,
+  "monthly_cost": 180.00,
+  "storage_gb": 50.0
+}
+```
+
+## Monitoring System
+
+The billing system runs asynchronously in the background:
+
+<Steps>
+  <Step title="Collection Interval">
+    Collects metrics every 60 seconds (configurable)
+  </Step>
+  
+  <Step title="Docker Stats API">
+    Uses Bollard Docker API for real-time stats
+  </Step>
+  
+  <Step title="Memory Storage">
+    Stores metrics in memory with RwLock for concurrent access
+  </Step>
+  
+  <Step title="Cost Calculation">
+    Calculates costs based on configured rates
+  </Step>
+  
+  <Step title="API Access">
+    Provides instant access to usage data via API
+  </Step>
+</Steps>
+
+## Cost Breakdown
+
+### Memory Costs
+- Calculated per GB per hour
+- Based on actual memory usage
+- Formula: `memory_gb × memory_per_gb_hour × hours`
+
+### CPU Costs
+- Calculated per vCPU per hour
+- Based on CPU usage percentage
+- Formula: `cpu_vcpu × cpu_per_vcpu_hour × hours`
+
+### Storage Costs
+- Calculated per GB per hour
+- Based on disk usage
+- Formula: `storage_gb × storage_per_gb_hour × hours`
+
+### Network Egress Costs
+- Calculated per GB transferred
+- One-time charge per GB
+- Formula: `egress_gb × egress_per_gb`
+
+## Complete Example
+
+```javascript
+// Monitor container costs over time
+const monitorCosts = async (containerId) => {
+  // Get current hourly usage
+  const hourly = await fetch(`http://localhost:8070/billing/usage/${containerId}/hourly`, {
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json'
+    }
+  }).then(r => r.json());
+  
+  console.log(`Current hourly cost: $${hourly.total_cost}`);
+  console.log(`Breakdown:`);
+  console.log(`  Memory: $${hourly.memory_cost}`);
+  console.log(`  CPU: $${hourly.cpu_cost}`);
+  console.log(`  Storage: $${hourly.storage_cost}`);
+  console.log(`  Egress: $${hourly.egress_cost}`);
+  
+  // Get monthly projection
+  const monthly = await fetch(`http://localhost:8070/billing/usage/${containerId}/monthly`, {
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json'
+    }
+  }).then(r => r.json());
+  
+  console.log(`\nProjected monthly cost: $${monthly.total_cost}`);
+  
+  // Alert if costs are high
+  if (monthly.total_cost > 100) {
+    console.warn('⚠️  Monthly costs exceed $100!');
+  }
+};
+
+// Estimate before creating
+const estimateBeforeCreate = async () => {
+  const estimate = await fetch('http://localhost:8070/billing/estimate/container', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      memory_gb: 4.0,
+      cpu_vcpu: 2.0,
+      storage_gb: 20.0,
+      egress_gb_per_month: 500.0
+    })
+  }).then(r => r.json());
+  
+  console.log(`Estimated monthly cost: $${estimate.monthly_cost}`);
+  
+  if (estimate.monthly_cost < 200) {
+    console.log('✓ Cost is within budget, proceeding with creation');
+    // Create container...
+  } else {
+    console.log('✗ Cost exceeds budget, consider reducing resources');
+  }
+};
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Monitor Regularly">
+    Check usage and costs regularly to avoid surprises. Set up automated alerts for high costs.
+  </Accordion>
+  
+  <Accordion title="Estimate Before Creating">
+    Always estimate costs before creating containers to ensure they fit within budget.
+  </Accordion>
+  
+  <Accordion title="Optimize Resources">
+    Right-size containers based on actual usage to minimize costs.
+  </Accordion>
+  
+  <Accordion title="Track Trends">
+    Monitor daily and monthly trends to identify cost optimization opportunities.
+  </Accordion>
+  
+  <Accordion title="Set Budgets">
+    Implement budget alerts and automatic scaling based on cost thresholds.
+  </Accordion>
+</AccordionGroup>
+
+## Performance
+
+- **Non-blocking**: Metrics collection runs asynchronously
+- **Efficient**: Uses streaming Docker API
+- **Scalable**: Handles any number of containers
+- **Low overhead**: Minimal impact on container performance
+
+## Security
+
+- All billing endpoints require authentication
+- Usage data is isolated per container
+- No sensitive data exposed in responses
+- Audit trail of all cost queries

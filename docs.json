@@ -69,6 +69,7 @@
               "lightd/network",
               "lightd/containers",
               "lightd/container-updates",
+              "lightd/billing",
               "lightd/websocket",
               "lightd/remote"
             ]

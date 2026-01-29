@@ -14,12 +14,14 @@ Default: `http://localhost:8070`
 ## Key Features
 
 - **Container Management** - Full lifecycle control (create, start, stop, restart, reinstall)
-- **Volume Management** - Persistent storage with file operations
-- **Network Pool** - Port allocation and management
+- **Volume Management** - Persistent storage with file operations and disk quotas
+- **Network Pool** - Port allocation and management with bulk operations
 - **WebSocket Interface** - Real-time container monitoring and control
 - **Remote Sync** - Multi-server synchronization support
-- **Resource Limits** - CPU and memory constraints
+- **Resource Limits** - CPU and memory constraints with live updates
 - **Pattern Detection** - Automatic server ready state detection
+- **Billing & Usage Tracking** - Real-time resource monitoring and cost estimation
+- **Container Updates** - Live resource updates without downtime
 
 ## Authentication
 
@@ -93,6 +95,12 @@ See the [Authentication Guide](/lightd/authentication) for token management.
   </Card>
   <Card title="Remote Sync" icon="cloud" href="/lightd/remote">
     Multi-server synchronization
+  </Card>
+  <Card title="Billing" icon="dollar-sign" href="/lightd/billing">
+    Usage tracking and cost estimation
+  </Card>
+  <Card title="Container Updates" icon="arrows-rotate" href="/lightd/container-updates">
+    Live resource updates without downtime
   </Card>
 </CardGroup>
 
