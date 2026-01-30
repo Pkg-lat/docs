@@ -341,7 +341,7 @@ Edit `config.json` to configure SFTP settings:
   </Accordion>
   
   <Accordion title="Database Storage">
-    Credentials stored in SQLite database: `storage/sftp_credentials.db`
+    Credentials stored in Sled database: `storage/sftp_credentials`
   </Accordion>
   
   <Accordion title="Unique Credentials">
@@ -407,35 +407,27 @@ Edit `config.json` to configure SFTP settings:
 ### Architecture
 
 ```
-┌─────────────────┐
-│  SFTP Client    │
-│  (FileZilla)    │
-└────────┬────────┘
-         │ SSH/SFTP Protocol
-         │ Port 2022
-┌────────▼────────┐
-│  SFTP Server    │
-│  (russh)        │
-├─────────────────┤
-│ Session Handler │
-│ - Auth          │
-│ - Packet Parse  │
-│ - Response      │
-├─────────────────┤
-│ Protocol Handler│
-│ - File Ops      │
-│ - Dir Ops       │
-│ - Path Resolve  │
-├─────────────────┤
-│ Credentials DB  │
-│ (SQLite)        │
-└────────┬────────┘
+Client (FileZilla, VS Code, etc.)
          │
-┌────────▼────────┐
-│ Container Volume│
-│ /storage/volumes│
-│ /volume-uuid/   │
-└─────────────────┘
+         │ SSH/SFTP Protocol (Port 2022)
+         ▼
+    SFTP Server (russh)
+         │
+         ├─► Session Handler
+         │   ├─ Authentication
+         │   ├─ Packet Parsing
+         │   └─ Response Generation
+         │
+         ├─► Protocol Handler
+         │   ├─ File Operations
+         │   ├─ Directory Operations
+         │   └─ Path Resolution
+         │
+         ├─► Credentials DB (Sled)
+         │   └─ Bcrypt Hashed Passwords
+         │
+         └─► Container Volume
+             └─ /storage/volumes/{volume-uuid}/
 ```
 
 ### Supported SFTP Packets
