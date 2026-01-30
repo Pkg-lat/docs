@@ -1,0 +1,557 @@
+---
+title: "SFTP File Access"
+description: "Built-in SFTP server providing secure file access to container volumes with automatic credential management and path isolation."
+---
+
+## Overview
+
+Lightd includes a built-in SFTP server that provides secure file access to container volumes. Each container gets isolated SFTP access to its volume directory with automatic credential management.
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Secure Protocol" icon="lock">
+    SSH File Transfer Protocol (SFTP) version 3
+  </Card>
+  <Card title="Automatic Credentials" icon="key">
+    Auto-generated or custom username/password
+  </Card>
+  <Card title="Path Isolation" icon="shield">
+    Chrooted to container volume directory
+  </Card>
+  <Card title="Compatible Clients" icon="desktop">
+    Works with FileZilla, WinSCP, VS Code, and more
+  </Card>
+</CardGroup>
+
+## Specifications
+
+- **Protocol**: SSH File Transfer Protocol (SFTP) version 3
+- **Port**: 2022 (configurable in `config.json`)
+- **Authentication**: Username/password (bcrypt hashed)
+- **Isolation**: Each session is chrooted to the container's volume directory
+- **Security**: No access to host filesystem or other containers
+
+## Supported Operations
+
+<Tabs>
+  <Tab title="Supported">
+    ✅ **File Operations**
+    - Read, write, create, delete, rename
+    
+    ✅ **Directory Operations**
+    - List, create, delete, navigate
+    
+    ✅ **File Attributes**
+    - Size, permissions, timestamps
+    
+    ✅ **Path Resolution**
+    - realpath, stat, lstat, fstat
+  </Tab>
+  
+  <Tab title="Not Supported">
+    ❌ **Currently Unavailable**
+    - Symbolic links
+    - Public key authentication
+    - File locking
+    - Extended attributes
+  </Tab>
+</Tabs>
+
+## Generate SFTP Credentials
+
+Create or reset SFTP credentials for a container.
+
+<CodeGroup>
+```bash Auto-generated
+curl -X POST http://localhost:8070/containers/my-container/sftp/credentials \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+```bash Custom Credentials
+curl -X POST http://localhost:8070/containers/my-container/sftp/credentials \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "nadhi",
+    "password": "secure_password"
+  }'
+```
+
+```javascript JavaScript
+// Auto-generated credentials
+const response = await fetch('http://localhost:8070/containers/my-container/sftp/credentials', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({})
+});
+
+const credentials = await response.json();
+console.log(`Username: ${credentials.username}`);
+console.log(`Password: ${credentials.password}`);
+```
+
+```python Python
+# Custom credentials
+response = requests.post(
+    'http://localhost:8070/containers/my-container/sftp/credentials',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json',
+        'Content-Type': 'application/json'
+    },
+    json={
+        'username': 'nadhi',
+        'password': 'secure_password'
+    }
+)
+
+credentials = response.json()
+```
+</CodeGroup>
+
+**Request Body:**
+```json
+{
+  "username": "custom_user",  // Optional: auto-generated if not provided
+  "password": "custom_pass"   // Optional: auto-generated if not provided
+}
+```
+
+**Response:**
+```json
+{
+  "username": "sftp_abc123",
+  "password": "generated_secure_password",
+  "host": "0.0.0.0",
+  "port": 2022,
+  "volume_path": "/home/container"
+}
+```
+
+## Get SFTP Connection Info
+
+Retrieve existing SFTP credentials for a container.
+
+<CodeGroup>
+```bash cURL
+curl -X GET http://localhost:8070/containers/my-container/sftp/info \
+  -H "Authorization: Bearer lightd_token" \
+  -H "Accept: Application/vnd.pkglatv1+json"
+```
+
+```javascript JavaScript
+const response = await fetch('http://localhost:8070/containers/my-container/sftp/info', {
+  headers: {
+    'Authorization': 'Bearer lightd_token',
+    'Accept': 'Application/vnd.pkglatv1+json'
+  }
+});
+
+const info = await response.json();
+```
+
+```python Python
+response = requests.get(
+    'http://localhost:8070/containers/my-container/sftp/info',
+    headers={
+        'Authorization': 'Bearer lightd_token',
+        'Accept': 'Application/vnd.pkglatv1+json'
+    }
+)
+
+info = response.json()
+```
+</CodeGroup>
+
+**Response:**
+```json
+{
+  "username": "sftp_abc123",
+  "host": "0.0.0.0",
+  "port": 2022,
+  "volume_path": "/home/container",
+  "created_at": 1706659200,
+  "updated_at": 1706659200
+}
+```
+
+## Connecting with Clients
+
+### Command Line (sftp)
+
+<Steps>
+  <Step title="Remove old host key (if reconnecting)">
+    ```bash
+    ssh-keygen -R "[0.0.0.0]:2022"
+    ```
+  </Step>
+  
+  <Step title="Connect with SFTP">
+    ```bash
+    sftp -P 2022 username@0.0.0.0
+    ```
+  </Step>
+  
+  <Step title="Or use SCP to copy files">
+    ```bash
+    scp -P 2022 localfile.txt username@0.0.0.0:/remote/path/
+    ```
+  </Step>
+</Steps>
+
+### FileZilla
+
+<Steps>
+  <Step title="Open Site Manager">
+    File → Site Manager → New Site
+  </Step>
+  
+  <Step title="Configure connection">
+    - **Protocol**: SFTP - SSH File Transfer Protocol
+    - **Host**: 0.0.0.0 (or your server IP)
+    - **Port**: 2022
+    - **Logon Type**: Normal
+    - **User**: Your SFTP username
+    - **Password**: Your SFTP password
+  </Step>
+  
+  <Step title="Connect">
+    Click "Connect" button
+  </Step>
+</Steps>
+
+### VS Code Remote
+
+<Steps>
+  <Step title="Install extension">
+    Install "Remote - SSH" extension
+  </Step>
+  
+  <Step title="Add SSH config">
+    Add to `~/.ssh/config`:
+    ```
+    Host my-container
+        HostName 0.0.0.0
+        Port 2022
+        User your_username
+    ```
+  </Step>
+  
+  <Step title="Connect">
+    `Ctrl+Shift+P` → "Remote-SSH: Connect to Host" → "my-container"
+  </Step>
+</Steps>
+
+### WinSCP
+
+<Steps>
+  <Step title="Create new session">
+    Click "New Session"
+  </Step>
+  
+  <Step title="Configure">
+    - **File protocol**: SFTP
+    - **Host name**: 0.0.0.0
+    - **Port number**: 2022
+    - **User name**: Your SFTP username
+    - **Password**: Your SFTP password
+  </Step>
+  
+  <Step title="Login">
+    Click "Login"
+  </Step>
+</Steps>
+
+## SFTP Commands
+
+Once connected, you can use standard SFTP commands:
+
+### Navigation
+```bash
+pwd                    # Print working directory
+ls                     # List files
+cd directory           # Change directory
+cd ..                  # Go up one level
+```
+
+### File Operations
+```bash
+get remote.txt         # Download file
+put local.txt          # Upload file
+get -r folder/         # Download directory recursively
+put -r folder/         # Upload directory recursively
+```
+
+### File Management
+```bash
+mkdir newfolder        # Create directory
+rmdir emptyfolder      # Remove empty directory
+rm file.txt            # Delete file
+rename old.txt new.txt # Rename file
+```
+
+### Information
+```bash
+stat file.txt          # Show file attributes
+lstat link             # Show link attributes
+```
+
+### Exit
+```bash
+bye                    # Disconnect
+exit                   # Disconnect
+quit                   # Disconnect
+```
+
+## Configuration
+
+Edit `config.json` to configure SFTP settings:
+
+```json
+{
+  "sftp": {
+    "enabled": true,
+    "port": 2022,
+    "host": "0.0.0.0"
+  }
+}
+```
+
+**Configuration Fields:**
+- `enabled` - Enable/disable SFTP server
+- `port` - SFTP server port (default: 2022)
+- `host` - Bind address (default: 0.0.0.0)
+
+## Security
+
+### Credential Storage
+
+<AccordionGroup>
+  <Accordion title="Password Hashing">
+    Passwords are hashed using bcrypt with cost factor 10 for secure storage.
+  </Accordion>
+  
+  <Accordion title="Database Storage">
+    Credentials stored in SQLite database: `storage/sftp_credentials.db`
+  </Accordion>
+  
+  <Accordion title="Unique Credentials">
+    Each container has unique credentials for isolation.
+  </Accordion>
+</AccordionGroup>
+
+### Path Isolation
+
+- Sessions are chrooted to container volume directory
+- Path traversal attempts are blocked
+- No access to:
+  - Host filesystem
+  - Other container volumes
+  - Lightd configuration files
+
+### Network Security
+
+- SFTP runs on non-standard port (2022) to avoid conflicts
+- SSH protocol provides encryption in transit
+- Host key generated on startup (ED25519)
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection Timeout">
+    **Problem:** FileZilla or other clients timeout after 20 seconds
+    
+    **Solution:**
+    - Check that lightd is running: `make run`
+    - Verify SFTP is enabled in `config.json`
+    - Check firewall allows port 2022
+    - Try CLI first: `sftp -P 2022 user@host`
+  </Accordion>
+  
+  <Accordion title="Host Key Verification Failed">
+    **Problem:** `WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!`
+    
+    **Solution:** Remove old host key:
+    ```bash
+    ssh-keygen -R "[0.0.0.0]:2022"
+    ```
+  </Accordion>
+  
+  <Accordion title="Permission Denied">
+    **Problem:** Cannot read/write files
+    
+    **Solution:**
+    - Verify credentials are correct
+    - Check container volume exists
+    - Ensure volume has proper permissions
+  </Accordion>
+  
+  <Accordion title="Path Not Found">
+    **Problem:** `cd` command shows "stat remote: Operation unsupported"
+    
+    **Solution:** Update to latest version where STAT/LSTAT are properly implemented.
+  </Accordion>
+</AccordionGroup>
+
+## Implementation Details
+
+### Architecture
+
+```
+┌─────────────────┐
+│  SFTP Client    │
+│  (FileZilla)    │
+└────────┬────────┘
+         │ SSH/SFTP Protocol
+         │ Port 2022
+┌────────▼────────┐
+│  SFTP Server    │
+│  (russh)        │
+├─────────────────┤
+│ Session Handler │
+│ - Auth          │
+│ - Packet Parse  │
+│ - Response      │
+├─────────────────┤
+│ Protocol Handler│
+│ - File Ops      │
+│ - Dir Ops       │
+│ - Path Resolve  │
+├─────────────────┤
+│ Credentials DB  │
+│ (SQLite)        │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│ Container Volume│
+│ /storage/volumes│
+│ /volume-uuid/   │
+└─────────────────┘
+```
+
+### Supported SFTP Packets
+
+| Type | Name | Description |
+|------|------|-------------|
+| 1 | SSH_FXP_INIT | Protocol initialization |
+| 2 | SSH_FXP_VERSION | Version response |
+| 3 | SSH_FXP_OPEN | Open file |
+| 4 | SSH_FXP_CLOSE | Close file/directory |
+| 5 | SSH_FXP_READ | Read from file |
+| 6 | SSH_FXP_WRITE | Write to file |
+| 7 | SSH_FXP_STAT | Get file attributes (follows symlinks) |
+| 8 | SSH_FXP_LSTAT | Get file attributes (no symlink follow) |
+| 9 | SSH_FXP_FSTAT | Get attributes by handle |
+| 11 | SSH_FXP_OPENDIR | Open directory |
+| 12 | SSH_FXP_READDIR | Read directory entries |
+| 13 | SSH_FXP_REMOVE | Delete file |
+| 14 | SSH_FXP_MKDIR | Create directory |
+| 15 | SSH_FXP_RMDIR | Remove directory |
+| 16 | SSH_FXP_REALPATH | Canonicalize path |
+| 18 | SSH_FXP_RENAME | Rename file/directory |
+
+### File Permissions
+
+Files and directories are created with standard Unix permissions:
+- **Files**: `0o100644` (rw-r--r--)
+- **Directories**: `0o040755` (rwxr-xr-x)
+
+## Performance
+
+- **Window Size**: 2MB for efficient large file transfers
+- **Packet Size**: 32KB maximum
+- **Timeout**: 5 minutes of inactivity
+- **Concurrent Sessions**: Unlimited (one per container)
+
+## Complete Example
+
+```javascript
+// Generate SFTP credentials for a container
+const generateSFTPAccess = async (containerId) => {
+  // Generate credentials
+  const response = await fetch(`http://localhost:8070/containers/${containerId}/sftp/credentials`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({})
+  });
+  
+  const credentials = await response.json();
+  
+  console.log('SFTP Access Created:');
+  console.log(`Host: ${credentials.host}`);
+  console.log(`Port: ${credentials.port}`);
+  console.log(`Username: ${credentials.username}`);
+  console.log(`Password: ${credentials.password}`);
+  console.log(`\nConnect with:`);
+  console.log(`sftp -P ${credentials.port} ${credentials.username}@${credentials.host}`);
+  
+  return credentials;
+};
+
+// Get existing SFTP info
+const getSFTPInfo = async (containerId) => {
+  const response = await fetch(`http://localhost:8070/containers/${containerId}/sftp/info`, {
+    headers: {
+      'Authorization': 'Bearer lightd_token',
+      'Accept': 'Application/vnd.pkglatv1+json'
+    }
+  });
+  
+  const info = await response.json();
+  console.log('SFTP Info:', info);
+  
+  return info;
+};
+
+// Usage
+const containerId = 'my-container';
+await generateSFTPAccess(containerId);
+await getSFTPInfo(containerId);
+```
+
+## Future Enhancements
+
+- Public key authentication
+- Symbolic link support
+- File locking
+- Resume interrupted transfers
+- Bandwidth limiting
+- Connection logging and auditing
+- Two-factor authentication
+- IP whitelisting
+
+## Compatible Clients
+
+<CardGroup cols={3}>
+  <Card title="FileZilla" icon="file-zipper">
+    Free, cross-platform FTP/SFTP client
+  </Card>
+  <Card title="WinSCP" icon="windows">
+    Windows SFTP and FTP client
+  </Card>
+  <Card title="Cyberduck" icon="duck">
+    macOS and Windows file transfer client
+  </Card>
+  <Card title="VS Code" icon="code">
+    Remote development via SSH
+  </Card>
+  <Card title="JetBrains" icon="laptop-code">
+    Gateway for remote development
+  </Card>
+  <Card title="Command Line" icon="terminal">
+    sftp, scp, rsync
+  </Card>
+</CardGroup>

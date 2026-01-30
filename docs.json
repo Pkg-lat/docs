@@ -70,6 +70,7 @@
               "lightd/containers",
               "lightd/container-updates",
               "lightd/billing",
+              "lightd/sftp",
               "lightd/websocket",
               "lightd/remote"
             ]
